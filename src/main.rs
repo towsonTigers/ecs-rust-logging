@@ -1,7 +1,6 @@
 mod logging;
 
 use logging::ecs::{init_logging, log_event_with_lookup};
-//use logging::mitre::Mitre;
 
 fn main() {
     init_logging();
