@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 pub struct Mitre {
     #[serde(rename = "threat.tactic.id")]
     pub tactic_id: Option<String>,

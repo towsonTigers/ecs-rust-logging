@@ -1,36 +1,29 @@
 mod logging;
 
-use logging::ecs::{init_logging, log_event};
-use logging::mitre::Mitre;
+use logging::ecs::{init_logging, log_event_with_lookup};
+//use logging::mitre::Mitre;
 
 fn main() {
     init_logging();
 
-    // Normal log
-    log_event(
-        "info",
-        "User login successful",
-        "auth-service",
-        None,
-    );
-
-    // Warning log
-    log_event(
-        "warning",
-        "User attempted invalid password",
-        "auth-service",
-        None,
-    );
-
-    // Security event with MITRE ATT&CK mapping
-    log_event(
-        "critical",
+    // Automatically mapped to MITRE
+    log_event_with_lookup(
+        "AUTH_BRUTE_FORCE",
         "Multiple failed login attempts detected",
         "auth-service",
-        Some(Mitre {
-            tactic_id: Some("TA0006".into()),
-            technique_id: Some("T1110".into()),
-            technique_name: Some("Brute Force".into()),
-        }),
+    );
+
+    // Another mapped event
+    log_event_with_lookup(
+        "PROCESS_SUSPICIOUS_EXECUTION",
+        "Suspicious PowerShell execution detected",
+        "endpoint-agent",
+    );
+
+    // Unknown event (no MITRE mapping)
+    log_event_with_lookup(
+        "USER_LOGIN",
+        "User logged in successfully",
+        "auth-service",
     );
 }

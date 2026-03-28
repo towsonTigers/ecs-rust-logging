@@ -1,8 +1,9 @@
 use chrono::Utc;
 use serde_json::{json, Value};
-use tracing::{error, info, warn};
+use tracing::{error, warn, info}; //debug??
 
 use super::mitre::Mitre;
+use super::mitre_lookup::mitre_lookup_table;
 
 pub fn init_logging() {
     let subscriber = tracing_subscriber::fmt()
@@ -25,30 +26,72 @@ pub fn log_event(
 ) {
     let timestamp = Utc::now().to_rfc3339();
 
-    let mut log: Value = json!({
-        "@timestamp": timestamp,
-        "log.level": level,
-        "message": message,
-        "service.name": service_name,
-        "event.dataset": "application",
-        "event.module": "rust-app"
-    });
-
-    if let Some(m) = mitre {
-        if let Some(tactic) = m.tactic_id {
-            log["threat.tactic.id"] = json!(tactic);
+    match (level, mitre) {
+        ("critical", Some(m)) => {
+            error!(
+                %timestamp,
+                log_level = level,
+                message = message,
+                service_name = service_name,
+                event_dataset = "application",
+                event_module = "rust-app",
+                threat_tactic_id = ?m.tactic_id,
+                threat_technique_id = ?m.technique_id,
+                threat_technique_name = ?m.technique_name
+            );
         }
-        if let Some(tech_id) = m.technique_id {
-            log["threat.technique.id"] = json!(tech_id);
+        ("critical", None) => {
+            error!(
+                %timestamp,
+                log_level = level,
+                message = message,
+                service_name = service_name,
+                event_dataset = "application",
+                event_module = "rust-app"
+            );
         }
-        if let Some(name) = m.technique_name {
-            log["threat.technique.name"] = json!(name);
+        ("warning", _) => {
+            warn!(
+                %timestamp,
+                log_level = level,
+                message = message,
+                service_name = service_name,
+                event_dataset = "application",
+                event_module = "rust-app"
+            );
+        }
+        _ => {
+            info!(
+                %timestamp,
+                log_level = level,
+                message = message,
+                service_name = service_name,
+                event_dataset = "application",
+                event_module = "rust-app"
+            );
         }
     }
+}
 
-    match level {
-        "critical" => error!("{}", log),
-        "warning" => warn!("{}", log),
-        _ => info!("{}", log),
-    }
+pub fn log_event_with_lookup(
+    event_key: &str,
+    message: &str,
+    service_name: &str,
+) {
+    let lookup = mitre_lookup_table();
+
+    let mitre = lookup.get(event_key);
+
+    let level = if mitre.is_some() {
+        "critical" // security events default to critical
+    } else {
+        "info"
+    };
+
+    super::ecs::log_event(
+        level,
+        message,
+        service_name,
+        mitre.cloned(),
+    );
 }
