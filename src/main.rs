@@ -1,6 +1,6 @@
 mod logging;
 
-use logging::ecs::{init_logging, log_event_with_lookup};
+use logging::ecs::{init_logging, log_event_with_lookup, log_warning, log_info};
 
 fn main() {
     init_logging();
@@ -24,5 +24,15 @@ fn main() {
         "USER_LOGIN",
         "User logged in successfully",
         "auth-service",
+    );
+
+    log_warning(
+       "foobar encountered",
+       "foo service"
+    );
+
+    log_info(
+        "look here",
+        "service"
     );
 }

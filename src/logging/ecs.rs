@@ -18,8 +18,43 @@ pub fn init_logging() {
     tracing::subscriber::set_global_default(subscriber)
         .expect("Failed to set global subscriber");
 }
+/* Standard ECS log levels
 
-pub fn log_event(
+    ECS doesn’t strictly enforce a fixed list, but it recommends the common industry levels:
+
+    Most commonly used
+
+    trace – very detailed, low-level debugging
+    debug – useful for developers
+    info – normal operational messages
+    warn (or warning) – something unexpected but not fatal
+    error – failure in part of the system
+    fatal (or critical) – severe failure, system may stop
+ */
+
+pub fn log_info(
+    message: &str,
+    service_name: &str
+) {
+    log("information", message, service_name);
+}
+
+pub fn log_warning(
+    message: &str,
+    service_name: &str
+) {
+    log("warning", message, service_name);
+}
+
+fn log(
+    level: &str,
+    message: &str,
+    service_name: &str
+) {
+    log_event(level, message, service_name, None);
+}
+
+fn log_event(
     level: &str,
     message: &str,
     service_name: &str,
@@ -37,61 +72,6 @@ pub fn log_event(
     println!("{}", serde_json::to_string(&ecs_log).unwrap());
 }
 
-/* pub fn log_event(
-    level: &str,
-    message: &str,
-    service_name: &str,
-    mitre: Option<Mitre>,
-) {
-    let timestamp = Utc::now().to_rfc3339();
-
-    match (level, mitre) {
-        ("critical", Some(m)) => {
-            error!(
-             //   %timestamp,
-             //   log_level = level,
-                message = message,
-                service_name = service_name,
-                event_dataset = "application",
-                event_module = "rust-app",
-                threat_tactic_id = m.tactic_id.unwrap_or_default(),
-                threat_technique_id = m.technique_id.unwrap_or_default(),
-                threat_technique_name = m.technique_name.unwrap_or_default()
-            );
-        }
-        ("critical", None) => {
-            error!(
-              //  %timestamp,
-              //  log_level = level,
-                message = message,
-                service_name = service_name,
-                event_dataset = "application",
-                event_module = "rust-app"
-            );
-        }
-        ("warning", _) => {
-            warn!(
-            //    %timestamp,
-            //    log_level = level,
-                message = message,
-                service_name = service_name,
-                event_dataset = "application",
-                event_module = "rust-app"
-            );
-        }
-        _ => {
-            info!(
-            //    %timestamp,
-            //    log_level = level,
-                message = message,
-                service_name = service_name,
-                event_dataset = "application",
-                event_module = "rust-app"
-            );
-        }
-    }
-} */
-
 pub fn log_event_with_lookup(
     event_key: &str,
     message: &str,
@@ -104,7 +84,7 @@ pub fn log_event_with_lookup(
     let level = if mitre.is_some() {
         "critical" // security events default to critical
     } else {
-        "info"
+        "unknown" 
     };
 
     super::ecs::log_event(
