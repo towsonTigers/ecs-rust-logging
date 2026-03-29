@@ -2,12 +2,14 @@ mod logging;
 
 use logging::ecs::{init_logging, log_event_with_lookup, log_warning, log_info};
 
+use crate::logging::mitre::technique;
+
 fn main() {
     init_logging();
 
     // Automatically mapped to MITRE
     log_event_with_lookup(
-        "AUTH_BRUTE_FORCE",
+        technique::BRUTE_FORCE,
         "Multiple failed login attempts detected",
         "auth-service",
     );

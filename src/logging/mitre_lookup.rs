@@ -1,13 +1,14 @@
 use std::collections::HashMap;
 
-use super::mitre::Mitre;
+use crate::logging::mitre::Mitre;
+use crate::logging::mitre::technique;
 
 pub fn mitre_lookup_table() -> HashMap<&'static str, Mitre> {
     let mut map = HashMap::new();
 
     // 🔐 Authentication attacks
     map.insert(
-        "AUTH_BRUTE_FORCE",
+        technique::BRUTE_FORCE,
         Mitre {
             tactic_id: Some("TA0006".into()),      // Credential Access
             technique_id: Some("T1110".into()),    // Brute Force
