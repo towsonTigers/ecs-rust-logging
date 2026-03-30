@@ -3,6 +3,10 @@ use serde_json::{json, Value};
 use super::mitre::Mitre;
 use super::mitre_lookup::mitre_lookup_table;
 
+use std::env;
+
+use std::sync::Mutex;
+
 /* Standard ECS log levels
 
     ECS doesn’t strictly enforce a fixed list, but it recommends the common industry levels:
@@ -18,7 +22,33 @@ use super::mitre_lookup::mitre_lookup_table;
  */
 const LOG_LEVEL: [&str; 6] = ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"];
 
+static LOG_LEVEL_INDEX: Mutex<usize> = Mutex::new(2);
+
+fn set_log_level(level: usize) {
+    *LOG_LEVEL_INDEX.lock().unwrap() = level;
+}
+
+fn get_log_level() -> usize {
+    *LOG_LEVEL_INDEX.lock().unwrap()
+}
+
 pub fn init_logging() {
+
+    let binding = env::var("RUST_LOG")
+        .unwrap_or_else(|_| "info".to_string())
+        .to_uppercase();
+
+    let rust_log = binding.trim_matches('"');
+
+    for i in 0..LOG_LEVEL.len() {
+        if LOG_LEVEL[i] == rust_log {
+            set_log_level(i);
+            break;
+        }
+    }
+
+    println!("RUST_LOG = {}", rust_log);
+    println!("LOG_LEVEL = {}", get_log_level());    
 
     let subscriber = tracing_subscriber::fmt()
         .json()
@@ -93,7 +123,7 @@ fn log(
 ) {
 
     //LOG LEVEL CHECK
-    // if level<RUST_LOG return;
+     if level< get_log_level()  { return };
     // levelMsg
     if event_key.trim().is_empty() {
          log_event(LOG_LEVEL[level], message, service_name, None);
