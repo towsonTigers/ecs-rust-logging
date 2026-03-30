@@ -22,7 +22,7 @@ use std::sync::Mutex;
  */
 const LOG_LEVEL: [&str; 6] = ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"];
 
-static LOG_LEVEL_INDEX: Mutex<usize> = Mutex::new(2);
+static LOG_LEVEL_INDEX: Mutex<usize> = Mutex::new(2); //default INFO
 
 fn set_log_level(level: usize) {
     *LOG_LEVEL_INDEX.lock().unwrap() = level;
@@ -45,10 +45,7 @@ pub fn init_logging() {
             set_log_level(i);
             break;
         }
-    }
-
-    println!("RUST_LOG = {}", rust_log);
-    println!("LOG_LEVEL = {}", get_log_level());    
+    }  
 
     let subscriber = tracing_subscriber::fmt()
         .json()
@@ -59,6 +56,9 @@ pub fn init_logging() {
 
     tracing::subscriber::set_global_default(subscriber)
         .expect("Failed to set global subscriber");
+
+    log_trace(&("RUST_LOG: ".to_owned() + rust_log), "init_logging()", "logging");
+    log_trace(&("LOG_LEVEL: ".to_owned() + &get_log_level().to_string()), "init_logging()", "logging");
 }
 
 #[allow(unused)]
