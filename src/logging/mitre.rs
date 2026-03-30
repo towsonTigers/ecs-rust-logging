@@ -1,5 +1,6 @@
 use serde::Serialize;
 
+#[allow(unused)]
 pub mod tactic {
     pub const INITIAL_ACCESS: &str = "TA0001";
     pub const EXECUTION: &str = "TA0002";
@@ -15,6 +16,7 @@ pub mod tactic {
     pub const IMPACT: &str = "TA0040";
 }
 
+#[allow(unused)]
 pub mod technique {
     pub const BRUTE_FORCE: &str = "T1110";
     pub const PHISHING: &str = "T1566";

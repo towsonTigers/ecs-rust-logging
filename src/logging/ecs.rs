@@ -4,8 +4,8 @@ use super::mitre::Mitre;
 use super::mitre_lookup::mitre_lookup_table;
 
 pub fn init_logging() {
+
     let subscriber = tracing_subscriber::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .json()
         .flatten_event(true)
         .with_current_span(false)
@@ -21,41 +21,77 @@ pub fn init_logging() {
 
     Most commonly used
 
-    trace – very detailed, low-level debugging
-    debug – useful for developers
-    info – normal operational messages
-    warn (or warning) – something unexpected but not fatal
-    error – failure in part of the system
-    fatal (or critical) – severe failure, system may stop
+   1 trace – very detailed, low-level debugging
+   2  debug – useful for developers
+   3 info – normal operational messages
+   4 warn (or warning) – something unexpected but not fatal
+   5 error – failure in part of the system
+   6 fatal (or critical) – severe failure, system may stop
  */
 
-pub fn log_info(
+#[allow(unused)]
+pub fn log_debug(
     message: &str,
-    service_name: &str
+    service_name: &str,
+    event_key: &str
 ) {
-    log("information", message, service_name);
+    log("DEBUG", message, service_name, event_key);
 }
 
+#[allow(unused)]
+pub fn log_info(
+    message: &str,
+    service_name: &str,
+    event_key: &str
+) {
+    log("INFO", message, service_name, event_key);
+}
+
+#[allow(unused)]
 pub fn log_warning(
     message: &str,
-    service_name: &str
+    service_name: &str,
+    event_key: &str
 ) {
-    log("warning", message, service_name);
+    log("WARN", message, service_name, event_key);
+}
+
+#[allow(unused)]
+pub fn log_error(
+    message: &str,
+    service_name: &str,
+    event_key: &str
+) {
+    log("ERROR", message, service_name, event_key);
+}
+
+#[allow(unused)]
+pub fn log_fatal(
+    message: &str,
+    service_name: &str,
+    event_key: &str
+) {
+    log("FATAL", message, service_name, event_key);
 }
 
 fn log(
     level: &str,
     message: &str,
-    service_name: &str
+    service_name: &str,
+    event_key: &str
 ) {
-    log_event(level, message, service_name, None);
+    if event_key.trim().is_empty() {
+         log_event(level, message, service_name, None);
+    } else {
+         log_event_with_lookup(level, message, service_name, event_key);
+    }
 }
 
 fn log_event(
     level: &str,
     message: &str,
     service_name: &str,
-    mitre: Option<Mitre>,
+    mitre: Option<Mitre>
 ) {
     let ecs_log = to_ecs(
         level,
@@ -69,20 +105,14 @@ fn log_event(
     println!("{}", serde_json::to_string(&ecs_log).unwrap());
 }
 
-pub fn log_event_with_lookup(
-    event_key: &str,
+fn log_event_with_lookup(
+    level: &str,
     message: &str,
-    service_name: &str,
+    service_name: &str,    
+    event_key: &str,
 ) {
     let lookup = mitre_lookup_table();
-
     let mitre = lookup.get(event_key);
-
-    let level = if mitre.is_some() {
-        "critical" // security events default to critical
-    } else {
-        "unknown" 
-    };
 
     super::ecs::log_event(
         level,
