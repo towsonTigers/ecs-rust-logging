@@ -1,7 +1,7 @@
 mod logging;
 
 use logging::ecs::{init_logging, log_error, log_warning, log_info, log_debug};
-//use tracing::{debug, error, info, warn};
+
 use std::env;
 
 use crate::logging::mitre::technique;

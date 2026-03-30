@@ -3,6 +3,21 @@ use serde_json::{json, Value};
 use super::mitre::Mitre;
 use super::mitre_lookup::mitre_lookup_table;
 
+/* Standard ECS log levels
+
+    ECS doesn’t strictly enforce a fixed list, but it recommends the common industry levels:
+
+    Most commonly used
+
+   0 trace – very detailed, low-level debugging
+   1 debug – useful for developers
+   2 info – normal operational messages
+   3 warn (or warning) – something unexpected but not fatal
+   4 error – failure in part of the system
+   5 fatal (or critical) – severe failure, system may stop
+ */
+const LOG_LEVEL: [&str; 6] = ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"];
+
 pub fn init_logging() {
 
     let subscriber = tracing_subscriber::fmt()
@@ -15,19 +30,15 @@ pub fn init_logging() {
     tracing::subscriber::set_global_default(subscriber)
         .expect("Failed to set global subscriber");
 }
-/* Standard ECS log levels
 
-    ECS doesn’t strictly enforce a fixed list, but it recommends the common industry levels:
-
-    Most commonly used
-
-   1 trace – very detailed, low-level debugging
-   2  debug – useful for developers
-   3 info – normal operational messages
-   4 warn (or warning) – something unexpected but not fatal
-   5 error – failure in part of the system
-   6 fatal (or critical) – severe failure, system may stop
- */
+#[allow(unused)]
+pub fn log_trace(
+    message: &str,
+    service_name: &str,
+    event_key: &str
+) {
+    log(0, message, service_name, event_key);
+}
 
 #[allow(unused)]
 pub fn log_debug(
@@ -35,7 +46,7 @@ pub fn log_debug(
     service_name: &str,
     event_key: &str
 ) {
-    log("DEBUG", message, service_name, event_key);
+    log(1, message, service_name, event_key);
 }
 
 #[allow(unused)]
@@ -44,7 +55,7 @@ pub fn log_info(
     service_name: &str,
     event_key: &str
 ) {
-    log("INFO", message, service_name, event_key);
+    log(2, message, service_name, event_key);
 }
 
 #[allow(unused)]
@@ -53,7 +64,7 @@ pub fn log_warning(
     service_name: &str,
     event_key: &str
 ) {
-    log("WARN", message, service_name, event_key);
+    log(3, message, service_name, event_key);
 }
 
 #[allow(unused)]
@@ -62,7 +73,7 @@ pub fn log_error(
     service_name: &str,
     event_key: &str
 ) {
-    log("ERROR", message, service_name, event_key);
+    log(4, message, service_name, event_key);
 }
 
 #[allow(unused)]
@@ -71,30 +82,34 @@ pub fn log_fatal(
     service_name: &str,
     event_key: &str
 ) {
-    log("FATAL", message, service_name, event_key);
+    log(5, message, service_name, event_key);
 }
 
 fn log(
-    level: &str,
+    level: usize,
     message: &str,
     service_name: &str,
     event_key: &str
 ) {
+
+    //LOG LEVEL CHECK
+    // if level<RUST_LOG return;
+    // levelMsg
     if event_key.trim().is_empty() {
-         log_event(level, message, service_name, None);
+         log_event(LOG_LEVEL[level], message, service_name, None);
     } else {
-         log_event_with_lookup(level, message, service_name, event_key);
+         log_event_with_lookup(LOG_LEVEL[level], message, service_name, event_key);
     }
 }
 
 fn log_event(
-    level: &str,
+    level_name: &str,
     message: &str,
     service_name: &str,
     mitre: Option<Mitre>
 ) {
     let ecs_log = to_ecs(
-        level,
+        level_name,
         message,
         service_name,
         "application",
@@ -106,7 +121,7 @@ fn log_event(
 }
 
 fn log_event_with_lookup(
-    level: &str,
+    level_name:  &str,
     message: &str,
     service_name: &str,    
     event_key: &str,
@@ -115,7 +130,7 @@ fn log_event_with_lookup(
     let mitre = lookup.get(event_key);
 
     super::ecs::log_event(
-        level,
+        level_name,
         message,
         service_name,
         mitre.cloned(),
@@ -123,7 +138,7 @@ fn log_event_with_lookup(
 }
 
 fn to_ecs(
-    level: &str,
+    level_name: &str,
     message: &str,
     service_name: &str,
     event_dataset: &str,
@@ -132,7 +147,7 @@ fn to_ecs(
 ) -> Value {
     json!({
         "@timestamp": chrono::Utc::now().to_rfc3339(),
-        "log.level": level,
+        "log.level": level_name,
         "message": message,
         "service.name": service_name,
         "event.dataset": event_dataset,
